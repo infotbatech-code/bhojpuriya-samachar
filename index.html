@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>लोकल समाचार पत्र | 100% Free Live News</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Mukta', sans-serif; }
+        body { background-color: #f7f9fa; color: #2c3e50; padding: 15px; }
+        .main-header { background-color: #961c1c; color: #ffffff; padding: 25px; text-align: center; border-bottom: 4px solid #111; border-radius: 6px; }
+        .main-header h1 { font-size: 2.8rem; font-weight: 700; }
+        .main-header p { font-size: 1.1rem; opacity: 0.9; margin-top: 5px; }
+        .workspace { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-top: 20px; }
+        @media(max-width: 850px) { .workspace { grid-template-columns: 1fr; } }
+        .panel { background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e1e8ed; height: fit-content; }
+        .panel-title { font-size: 1.4rem; color: #961c1c; border-bottom: 2px solid #961c1c; padding-bottom: 8px; margin-bottom: 15px; font-weight: 600; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.95rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; color: #333; }
+        .form-group textarea { height: 100px; resize: vertical; }
+        .btn { background-color: #27ae60; color: white; border: none; padding: 12px 20px; font-size: 1rem; font-weight: 600; border-radius: 4px; cursor: pointer; width: 100%; transition: 0.2s ease; }
+        .btn:hover { background-color: #219653; }
+        .btn-danger { background-color: #7f8c8d; margin-top: 10px; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .news-feed { display: flex; flex-direction: column; gap: 20px; }
+        .news-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; display: flex; gap: 15px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        @media(max-width: 550px) { .news-card { flex-direction: column; } }
+        .news-card img { width: 180px; height: 120px; object-fit: cover; border-radius: 4px; background-color: #eaeaea; }
+        @media(max-width: 550px) { .news-card img { width: 100%; height: 180px; } }
+        .news-card-body { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .tag { background: #ebf5fb; color: #2980b9; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; width: fit-content; margin-bottom: 5px; }
+        .news-card h3 { font-size: 1.3rem; line-height: 1.4; color: #111; margin-bottom: 8px; }
+        .news-card p { font-size: 0.95rem; color: #555; }
+        .news-card-footer { margin-top: 10px; font-size: 0.8rem; color: #999; }
+        .empty-state { text-align: center; padding: 40px; color: #7f8c8d; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <h1>लोकल समाचार (Samachar News)</h1>
+        <p>GitHub Pages पर 100% मुफ्त लाइव होस्टिंग</p>
+    </header>
+
+    <div class="workspace">
+        <!-- Left Column: Upload Dashboard -->
+        <aside class="panel">
+            <div class="panel-title">न्यूज़ अपलोड पैनल</div>
+            
+            <div class="form-group">
+                <label>शीर्षक / Headline</label>
+                <input type="text" id="newsTitle" placeholder="समाचार का मुख्य शीर्षक लिखें...">
+            </div>
+
+            <div class="form-group">
+                <label>श्रेणी / Category</label>
+                <select id="newsCategory">
+                    <option value="स्थानीय समाचार">स्थानीय (Local)</option>
+                    <option value="राजनीति">राजनीति (Politics)</option>
+                    <option value="क्राइम / दुर्घटना">क्राइम (Crime)</option>
+                    <option value="खेल समाचार">खेल (Sports)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>इमेज वेब लिंक / Image URL</label>
+                <input type="text" id="newsImage" placeholder="https://example.com" value="https://unsplash.com">
+            </div>
+
+            <div class="form-group">
+                <label>समाचार विवरण / Content</label>
+                <textarea id="newsContent" placeholder="खबर का पूरा विवरण यहाँ विस्तार से टाइप करें..."></textarea>
+            </div>
+
+            <button class="btn" onclick="publishLocalNews()">खबर लाइव करें (Publish)</button>
+            <button class="btn btn-danger" onclick="clearAllNews()">सारी खबरें हटाएं (Reset)</button>
+        </aside>
+
+        <!-- Right Column: Live News Stream -->
+        <main class="panel">
+            <div class="panel-title">ताज़ा खबरें (Live Feed)</div>
+            <div id="newsContainer" class="news-feed">
+                <!-- Content injected here via Javascript -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Local Browser storage setup to ensure zero maintenance fees [1]
+        let localArticles = JSON.parse(localStorage.getItem('samachar_free_data')) || [];
+
+        function saveAndRender() {
+            localStorage.setItem('samachar_free_data', JSON.stringify(localArticles));
+            renderNewsFeed();
+        }
+
+        function publishLocalNews() {
+            const titleInput = document.getElementById('newsTitle');
+            const categoryInput = document.getElementById('newsCategory');
+            const imageInput = document.getElementById('newsImage');
+            const contentInput = document.getElementById('newsContent');
+
+            if (!titleInput.value.trim() || !contentInput.value.trim()) {
+                alert('कृपया शीर्षक और समाचार विवरण दोनों भरें!');
+                return;
+            }
+
+            const newPost = {
+                id: Date.now(),
+                title: titleInput.value,
+                category: categoryInput.value,
+                image: imageInput.value || 'https://unsplash.com',
+                content: contentInput.value,
+                date: new Date().toLocaleString('hi-IN')
+            };
+
+            localArticles.unshift(newPost);
+            titleInput.value = '';
+            contentInput.value = '';
+            
+            saveAndRender();
+        }
+
+        function clearAllNews() {
+            if(confirm('क्या आप सचमुच सारी स्थानीय खबरें हटाना चाहते हैं?')) {
+                localArticles = [];
+                saveAndRender();
+            }
+        }
+
+        function renderNewsFeed() {
+            const feedContainer = document.getElementById('newsContainer');
+            
+            if (localArticles.length === 0) {
+                feedContainer.innerHTML = '<div class="empty-state">अभी कोई लोकल न्यूज़ लाइव नहीं है। बाएँ पैनल से पहली खबर पोस्ट करें!</div>';
+                return;
+            }
+
+            feedContainer.innerHTML = localArticles.map(article => `
+                <article class="news-card">
+                    <img src="${article.image}" alt="News">
+                    <div class="news-card-body">
+                        <div>
+                            <div class="tag">${article.category}</div>
+                            <h3>${article.title}</h3>
+                            <p>${article.content}</p>
+                        </div>
+                        <div class="news-card-footer">
+                            अपलोड समय: ${article.date}
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        // Initialize display frame on application load
+        renderNewsFeed();
+    </script>
+</body>
+</html>
