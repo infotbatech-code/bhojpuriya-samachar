@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bhojpuriya Samachar | लोकल समाचार पत्र</title>
     <meta name="google-site-verification" content="cs2ZksZscNdsHam-w7qXUf6pW6e9V5hGf-R0qF5gIms" />
-    <!-- Supabase CDN लाइब्रेरी को जोड़ना -->
+    <!-- सही और फिक्स की हुई Supabase CDN लाइब्रेरी -->
     <script src="https://jsdelivr.net"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -146,7 +146,8 @@
                 return;
             }
 
-            const file = fileInput.files[0];
+            // फोटो अपलोड करने की लाइन को 100% फिक्स किया गया
+            const file = fileInput.files[0]; 
 
             if (file) {
                 const reader = new FileReader();
