@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bhojpuriya Samachar | लोकल समाचार पत्र</title>
     <meta name="google-site-verification" content="cs2ZksZscNdsHam-w7qXUf6pW6e9V5hGf-R0qF5gIms" />
-    <!-- सही और फिक्स की हुई Supabase CDN लाइब्रेरी -->
+    <!-- Supabase CDN लाइब्रेरी -->
     <script src="https://jsdelivr.net"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -146,16 +146,35 @@
                 return;
             }
 
-            // फोटो अपलोड करने की लाइन को 100% फिक्स किया गया
-            const file = fileInput.files[0]; 
+            const files = fileInput.files;
 
-            if (file) {
+            // अगर एडमिन ने फोटो चुनी है, तो उसे छोटा (Compress) करने का नया ऑटोमैटिक सिस्टम [1]
+            if (files && files.length > 0) {
+                const file = files[0];
                 const reader = new FileReader();
-                reader.onload = async function(e) {
-                    await uploadToDatabase(e.target.result);
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // फोटो की साइज को मैक्सिमम 600px चौड़ा सेट करना ताकि डेटाबेस तुरंत स्वीकार करे
+                        const max_width = 600;
+                        const scale = max_width / img.width;
+                        canvas.width = max_width;
+                        canvas.height = img.height * scale;
+                        
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        // फोटो क्वालिटी को कंप्रेस करना (0.6 यानी 60% क्वालिटी) [1]
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                        uploadToDatabase(compressedDataUrl);
+                    };
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             } else {
+                // अगर फोटो नहीं चुनी तो डिफ़ॉल्ट फोटो लगेगी
                 uploadToDatabase('https://unsplash.com');
             }
 
@@ -172,17 +191,3 @@
                 if (error) {
                     alert('त्रुटि: खबर लाइव करने में समस्या आई! ' + error.message);
                 } else {
-                    alert('खबर सफलतापूर्वक पूरे इंटरनेट पर लाइव हो गई है!');
-                    titleInput.value = '';
-                    contentInput.value = '';
-                    fileInput.value = '';
-                    passwordInput.value = '';
-                    fetchNewsArticles();
-                }
-            }
-        }
-
-        fetchNewsArticles();
-    </script>
-</body>
-</html>
