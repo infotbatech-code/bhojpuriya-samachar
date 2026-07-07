@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>लोकल समाचार पत्र | 100% Free Live News</title>
-    <link href="https://googleapis.com" rel="stylesheet">
+    <title>Bhojpuriya Samachar | लोकल समाचार पत्र</title>
+    <!-- Supabase CDN लाइब्रेरी को जोड़ना -->
+    <script src="https://jsdelivr.net"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Mukta', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f7f9fa; color: #2c3e50; padding: 15px; }
         .main-header { background-color: #961c1c; color: #ffffff; padding: 25px; text-align: center; border-bottom: 4px solid #111; border-radius: 6px; }
         .main-header h1 { font-size: 2.8rem; font-weight: 700; }
@@ -21,8 +22,6 @@
         .form-group textarea { height: 100px; resize: vertical; }
         .btn { background-color: #27ae60; color: white; border: none; padding: 12px 20px; font-size: 1rem; font-weight: 600; border-radius: 4px; cursor: pointer; width: 100%; transition: 0.2s ease; }
         .btn:hover { background-color: #219653; }
-        .btn-danger { background-color: #7f8c8d; margin-top: 10px; }
-        .btn-danger:hover { background-color: #c0392b; }
         .news-feed { display: flex; flex-direction: column; gap: 20px; }
         .news-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; display: flex; gap: 15px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         @media(max-width: 550px) { .news-card { flex-direction: column; } }
@@ -39,14 +38,13 @@
 <body>
 
     <header class="main-header">
-        <h1>लोकल समाचार (Samachar News)</h1>
-        <p>GitHub Pages पर 100% मुफ्त लाइव होस्टिंग</p>
+        <h1>भोजपुरीया समाचार (Bhojpuriya Samachar)</h1>
+        <p>Live Cloud Connected Database Portal</p>
     </header>
 
     <div class="workspace">
-        <!-- Left Column: Upload Dashboard -->
         <aside class="panel">
-            <div class="panel-title">न्यूज़ अपलोड पैनल</div>
+            <div class="panel-title">न्यूज़ अपलोड पैनल (Admin)</div>
             
             <div class="form-group">
                 <label>शीर्षक / Headline</label>
@@ -64,8 +62,8 @@
             </div>
 
             <div class="form-group">
-                <label>इमेज वेब लिंक / Image URL</label>
-                <input type="text" id="newsImage" placeholder="https://example.com" value="https://unsplash.com">
+                <label>इमेज अपलोड करें / Upload Image File</label>
+                <input type="file" id="newsImageFile" accept="image/*">
             </div>
 
             <div class="form-group">
@@ -73,73 +71,51 @@
                 <textarea id="newsContent" placeholder="खबर का पूरा विवरण यहाँ विस्तार से टाइप करें..."></textarea>
             </div>
 
-            <button class="btn" onclick="publishLocalNews()">खबर लाइव करें (Publish)</button>
-            <button class="btn btn-danger" onclick="clearAllNews()">सारी खबरें हटाएं (Reset)</button>
+            <!-- सुरक्षा के लिए खुफिया पासवर्ड पिन फ़ील्ड -->
+            <div class="form-group">
+                <label>एडमिन सुरक्षा पासवर्ड / Admin Password</label>
+                <input type="password" id="adminLockPassword" placeholder="खुफिया पासवर्ड डालें...">
+            </div>
+
+            <button class="btn" onclick="publishCloudNews()">खबर लाइव करें (Publish)</button>
         </aside>
 
-        <!-- Right Column: Live News Stream -->
         <main class="panel">
             <div class="panel-title">ताज़ा खबरें (Live Feed)</div>
             <div id="newsContainer" class="news-feed">
-                <!-- Content injected here via Javascript -->
+                <!-- डेटाबेस से खबरें यहाँ दिखाई देंगी -->
             </div>
         </main>
     </div>
 
     <script>
-        // Local Browser storage setup to ensure zero maintenance fees [1]
-        let localArticles = JSON.parse(localStorage.getItem('samachar_free_data')) || [];
+        const SUPABASE_URL = "https://supabase.co";
+        const SUPABASE_KEY = "sb_publishable_GEFHNQ8ZXntt8CCIS1sn3w__gKEa0a75f0a3e8e24483a903c734919597fbf2df6595ae";
 
-        function saveAndRender() {
-            localStorage.setItem('samachar_free_data', JSON.stringify(localArticles));
-            renderNewsFeed();
-        }
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function publishLocalNews() {
-            const titleInput = document.getElementById('newsTitle');
-            const categoryInput = document.getElementById('newsCategory');
-            const imageInput = document.getElementById('newsImage');
-            const contentInput = document.getElementById('newsContent');
+        // लाइव डेटाबेस से खबरें लोड करना
+        async function fetchNewsArticles() {
+            const feedContainer = document.getElementById('newsContainer');
+            
+            const { data: news_articles, error } = await _supabase
+                .from('news_articles')
+                .select('*')
+                .order('id', { ascending: false });
 
-            if (!titleInput.value.trim() || !contentInput.value.trim()) {
-                alert('कृपया शीर्षक और समाचार विवरण दोनों भरें!');
+            if (error) {
+                feedContainer.innerHTML = `<div class="empty-state">त्रुटि: डेटाबेस लोड नहीं हो सका। ${error.message}</div>`;
                 return;
             }
 
-            const newPost = {
-                id: Date.now(),
-                title: titleInput.value,
-                category: categoryInput.value,
-                image: imageInput.value || 'https://unsplash.com',
-                content: contentInput.value,
-                date: new Date().toLocaleString('hi-IN')
-            };
-
-            localArticles.unshift(newPost);
-            titleInput.value = '';
-            contentInput.value = '';
-            
-            saveAndRender();
-        }
-
-        function clearAllNews() {
-            if(confirm('क्या आप सचमुच सारी स्थानीय खबरें हटाना चाहते हैं?')) {
-                localArticles = [];
-                saveAndRender();
-            }
-        }
-
-        function renderNewsFeed() {
-            const feedContainer = document.getElementById('newsContainer');
-            
-            if (localArticles.length === 0) {
+            if (!news_articles || news_articles.length === 0) {
                 feedContainer.innerHTML = '<div class="empty-state">अभी कोई लोकल न्यूज़ लाइव नहीं है। बाएँ पैनल से पहली खबर पोस्ट करें!</div>';
                 return;
             }
 
-            feedContainer.innerHTML = localArticles.map(article => `
+            feedContainer.innerHTML = news_articles.map(article => `
                 <article class="news-card">
-                    <img src="${article.image}" alt="News">
+                    <img src="${article.image || 'https://unsplash.com'}" alt="News">
                     <div class="news-card-body">
                         <div>
                             <div class="tag">${article.category}</div>
@@ -147,15 +123,70 @@
                             <p>${article.content}</p>
                         </div>
                         <div class="news-card-footer">
-                            अपलोड समय: ${article.date}
+                            अपलोड समय: ${new Date(article.created_at).toLocaleString('hi-IN')}
                         </div>
                     </div>
                 </article>
             `).join('');
         }
 
-        // Initialize display frame on application load
-        renderNewsFeed();
+        // नई खबर क्लाउड डेटाबेस में भेजना
+        function publishCloudNews() {
+            const titleInput = document.getElementById('newsTitle');
+            const categoryInput = document.getElementById('newsCategory');
+            const fileInput = document.getElementById('newsImageFile');
+            const contentInput = document.getElementById('newsContent');
+            const passwordInput = document.getElementById('adminLockPassword');
+
+            // पासवर्ड सिक्योरिटी चेक
+            // आप चाहें तो नीचे "admin123" को बदलकर अपना कोई भी मनपसंद पासवर्ड रख सकते हैं
+            if (passwordInput.value !== "admin123") {
+                alert('त्रुटि: गलत पासवर्ड! केवल अधिकृत एडमिन ही खबरें पोस्ट कर सकते हैं।');
+                return;
+            }
+
+            if (!titleInput.value.trim() || !contentInput.value.trim()) {
+                alert('कृपया शीर्षक और समाचार विवरण दोनों भरें!');
+                return;
+            }
+
+            const file = fileInput.files;
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    await uploadToDatabase(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                uploadToDatabase('https://unsplash.com');
+            }
+
+            async function uploadToDatabase(imageData) {
+                const { error } = await _supabase
+                    .from('news_articles')
+                    .insert([{
+                        title: titleInput.value,
+                        category: categoryInput.value,
+                        image: imageData,
+                        content: contentInput.value
+                    }]);
+
+                if (error) {
+                    alert('त्रुटि: खबर लाइव करने में समस्या आई! ' + error.message);
+                } else {
+                    alert('खबर सफलतापूर्वक पूरे इंटरनेट पर लाइव हो गई है!');
+                    titleInput.value = '';
+                    contentInput.value = '';
+                    fileInput.value = '';
+                    passwordInput.value = ''; // पासवर्ड बॉक्स खाली करें
+                    fetchNewsArticles();
+                }
+            }
+        }
+
+        // एप्लीकेशन लोड होने पर फ़ंक्शन चलाना
+        fetchNewsArticles();
     </script>
 </body>
 </html>
