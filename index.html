@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bhojpuriya Samachar | लोकल समाचार पत्र</title>
-    <meta name="google-site-verification" content="cS2ZksZscNdsHam-w7q
+    <meta name="google-site-verification" content="cs2ZksZscNdsHam-w7qXUf6pW6e9V5hGf-R0qF5gIms" />
     <!-- Supabase CDN लाइब्रेरी को जोड़ना -->
     <script src="https://jsdelivr.net"></script>
     <style>
@@ -72,7 +72,6 @@
                 <textarea id="newsContent" placeholder="खबर का पूरा विवरण यहाँ विस्तार से टाइप करें..."></textarea>
             </div>
 
-            <!-- सुरक्षा के लिए खुफिया पासवर्ड पिन फ़ील्ड -->
             <div class="form-group">
                 <label>एडमिन सुरक्षा पासवर्ड / Admin Password</label>
                 <input type="password" id="adminLockPassword" placeholder="खुफिया पासवर्ड डालें...">
@@ -95,7 +94,6 @@
 
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // लाइव डेटाबेस से खबरें लोड करना
         async function fetchNewsArticles() {
             const feedContainer = document.getElementById('newsContainer');
             
@@ -131,7 +129,6 @@
             `).join('');
         }
 
-        // नई खबर क्लाउड डेटाबेस में भेजना
         function publishCloudNews() {
             const titleInput = document.getElementById('newsTitle');
             const categoryInput = document.getElementById('newsCategory');
@@ -139,8 +136,6 @@
             const contentInput = document.getElementById('newsContent');
             const passwordInput = document.getElementById('adminLockPassword');
 
-            // पासवर्ड सिक्योरिटी चेक
-            // आप चाहें तो नीचे "admin123" को बदलकर अपना कोई भी मनपसंद पासवर्ड रख सकते हैं
             if (passwordInput.value !== "admin123") {
                 alert('त्रुटि: गलत पासवर्ड! केवल अधिकृत एडमिन ही खबरें पोस्ट कर सकते हैं।');
                 return;
@@ -151,7 +146,7 @@
                 return;
             }
 
-            const file = fileInput.files;
+            const file = fileInput.files[0];
 
             if (file) {
                 const reader = new FileReader();
@@ -180,13 +175,12 @@
                     titleInput.value = '';
                     contentInput.value = '';
                     fileInput.value = '';
-                    passwordInput.value = ''; // पासवर्ड बॉक्स खाली करें
+                    passwordInput.value = '';
                     fetchNewsArticles();
                 }
             }
         }
 
-        // एप्लीकेशन लोड होने पर फ़ंक्शन चलाना
         fetchNewsArticles();
     </script>
 </body>
